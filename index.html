@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Линза — проверка ссылок</title>
+<meta name="description" content="Линза — бесплатная проверка подозрительных ссылок прямо в браузере: фишинг, подмена символов, сокращатели, защитные DNS, возраст домена и ещё полтора десятка сервисов.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script>
+  // тема применяется до отрисовки, чтобы не было вспышки
+  (function(){try{var t=localStorage.getItem("linza-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<style>
+  /* ---------- белая тема ---------- */
+  :root{
+    --bg:#FFFFFF;--surface:#F4F6F9;--surface-2:#E9EDF2;--field:#FFFFFF;
+    --ink:#0C1320;--muted:#566277;--faint:#8A95A8;
+    --line:#DCE2EA;--line-strong:#C3CCD8;
+    --accent:#2B47D4;--accent-ink:#FFFFFF;--accent-soft:rgba(43,71,212,.10);
+    --safe:#11845A;--safe-soft:rgba(17,132,90,.11);
+    --warn:#A86A00;--warn-soft:rgba(214,145,20,.15);
+    --danger:#C6302A;--danger-soft:rgba(198,48,42,.10);
+    --shadow:0 1px 0 rgba(12,19,32,.04),0 18px 40px -28px rgba(12,19,32,.35);
+    --sans:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --display:"Unbounded","Onest",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;
+  }
+  /* ---------- чёрная тема ---------- */
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#000000;--surface:#0E1116;--surface-2:#171B22;--field:#07090C;
+      --ink:#EDF1F7;--muted:#9AA5B6;--faint:#667185;
+      --line:#20262F;--line-strong:#2E3642;
+      --accent:#8FA3FF;--accent-ink:#050814;--accent-soft:rgba(143,163,255,.13);
+      --safe:#3FD495;--safe-soft:rgba(63,212,149,.12);
+      --warn:#F2BD55;--warn-soft:rgba(242,189,85,.13);
+      --danger:#FF6A5F;--danger-soft:rgba(255,106,95,.13);
+      --shadow:0 0 0 1px rgba(255,255,255,.02),0 24px 50px -30px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#000000;--surface:#0E1116;--surface-2:#171B22;--field:#07090C;
+    --ink:#EDF1F7;--muted:#9AA5B6;--faint:#667185;
+    --line:#20262F;--line-strong:#2E3642;
+    --accent:#8FA3FF;--accent-ink:#050814;--accent-soft:rgba(143,163,255,.13);
+    --safe:#3FD495;--safe-soft:rgba(63,212,149,.12);
+    --warn:#F2BD55;--warn-soft:rgba(242,189,85,.13);
+    --danger:#FF6A5F;--danger-soft:rgba(255,106,95,.13);
+    --shadow:0 0 0 1px rgba(255,255,255,.02),0 24px 50px -30px rgba(0,0,0,.9);
+  }
+
+  :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  *,*::before,*::after{box-sizing:inherit}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;transition:background-color .25s,color .25s}
+  a{color:var(--accent)}
+  button{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+
+  /* ---------- шапка ---------- */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink)}
+  .brand svg{flex:0 0 auto}
+  .brand b{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .icon-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;cursor:pointer;text-decoration:none;color:var(--ink);font-size:14px;font-weight:500;transition:border-color .15s,background .15s}
+  .icon-btn:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .icon-btn svg{fill:currentColor;flex:0 0 auto}
+  .theme-btn .sun{display:none}
+  :root[data-theme="dark"] .theme-btn .sun{display:block}
+  :root[data-theme="dark"] .theme-btn .moon{display:none}
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .theme-btn .sun{display:block}
+    :root:not([data-theme="light"]) .theme-btn .moon{display:none}
+  }
+
+  /* ---------- главный блок ---------- */
+  .hero{padding:44px 0 10px;max-width:820px}
+  h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,5.2vw,54px);line-height:1.06;letter-spacing:-.025em;margin:0 0 16px}
+  .lede{color:var(--muted);font-size:17px;max-width:62ch;margin:0}
+
+  .probe{margin-top:30px}
+  .field{display:flex;gap:10px;flex-wrap:wrap}
+  .field input{flex:1 1 420px;min-width:0;height:62px;border-radius:14px;border:1.5px solid var(--line-strong);background:var(--field);color:var(--ink);font-family:var(--mono);font-size:17px;padding:0 18px;outline:none;transition:border-color .15s,box-shadow .15s}
+  .field input::placeholder{color:var(--faint)}
+  .field input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .go{height:62px;padding:0 30px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;cursor:pointer;transition:filter .15s,transform .1s}
+  .go:hover{filter:brightness(1.07)}
+  .go:active{transform:translateY(1px)}
+  .under{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+  .examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .examples span{color:var(--faint);font-size:14px;margin-right:2px}
+  .chip{border:1px solid var(--line-strong);background:transparent;border-radius:999px;padding:6px 13px;font-size:13.5px;color:var(--muted);cursor:pointer;transition:.15s}
+  .chip:hover{border-color:var(--accent);color:var(--ink)}
+  .switch{display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none}
+  .switch input{appearance:none;-webkit-appearance:none;width:38px;height:22px;border-radius:999px;background:var(--line-strong);position:relative;cursor:pointer;margin:0;transition:background .15s}
+  .switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+  .switch input:checked{background:var(--accent)}
+  .switch input:checked::after{transform:translateX(16px)}
+
+  /* ---------- анатомия адреса: главный визуальный элемент ---------- */
+  .lens{margin-top:26px;padding:22px 22px 18px;border-radius:18px;background:var(--surface);border:1px solid var(--line);min-height:96px}
+  .lens-empty{color:var(--faint);font-size:14.5px}
+  .segs{display:flex;flex-wrap:wrap;align-items:flex-start;row-gap:14px}
+  .seg{display:inline-flex;flex-direction:column;min-width:0;max-width:100%}
+  .seg .v{font-family:var(--mono);font-size:clamp(17px,2.6vw,25px);line-height:1.35;padding:2px 3px;border-radius:6px;word-break:break-all;white-space:pre-wrap}
+  .seg .k{font-size:11.5px;color:var(--faint);padding:5px 3px 0;border-top:2px solid var(--line-strong);margin-top:4px;white-space:nowrap}
+  .seg.s-proto .v{color:var(--accent)}
+  .seg.s-proto .k{border-color:var(--accent)}
+  .seg.s-sep .v{color:var(--faint)} .seg.s-sep .k{border-color:transparent}
+  .seg.s-sub .v{color:var(--muted)}
+  .seg.s-dom .v{color:var(--ink);font-weight:700}
+  .seg.s-dom .k{border-color:var(--ink);color:var(--ink);font-weight:600}
+  .seg.s-tld .v{color:var(--ink)}
+  .seg.s-rest .v{color:var(--muted);font-size:clamp(14px,1.9vw,18px)}
+  .seg.bad .v{background:var(--danger-soft);color:var(--danger)}
+  .seg.bad .k{border-color:var(--danger);color:var(--danger)}
+  .seg.warn .v{background:var(--warn-soft);color:var(--warn)}
+  .seg.warn .k{border-color:var(--warn);color:var(--warn)}
+  .lens-note{margin-top:14px;font-size:14px;color:var(--muted)}
+  .lens-note b{color:var(--ink);font-family:var(--mono);font-weight:700;word-break:break-all}
+
+  /* ---------- результат ---------- */
+  #result{display:none;padding:34px 0 20px}
+  #result.show{display:block}
+  .verdict{display:grid;grid-template-columns:1fr auto;gap:18px 30px;align-items:end;padding:26px 26px 22px;border-radius:20px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+  .verdict .lvl{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,38px);line-height:1.1;letter-spacing:-.02em}
+  .verdict[data-lvl=safe] .lvl{color:var(--safe)}
+  .verdict[data-lvl=caution] .lvl{color:var(--warn)}
+  .verdict[data-lvl=danger] .lvl{color:var(--danger)}
+  .verdict .sub{color:var(--muted);margin-top:6px;max-width:60ch}
+  .score{text-align:right}
+  .score .n{font-family:var(--display);font-weight:700;font-size:44px;line-height:1}
+  .score .n small{font-size:16px;color:var(--faint);font-weight:500}
+  .score .l{font-size:13px;color:var(--faint)}
+  .meter{grid-column:1/-1;position:relative;height:10px;border-radius:999px;background:linear-gradient(90deg,var(--safe) 0 20%,var(--warn) 20% 50%,var(--danger) 50% 100%)}
+  .meter i{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--bg);border:4px solid var(--ink);transform:translate(-50%,-50%);left:2%;transition:left .6s cubic-bezier(.2,.7,.3,1)}
+  .progress{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 16px;font-size:13.5px;color:var(--muted)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .small-btn{border:1px solid var(--line-strong);background:var(--bg);border-radius:10px;padding:7px 13px;font-size:13.5px;cursor:pointer;color:var(--ink);transition:border-color .15s}
+  .small-btn:hover{border-color:var(--accent)}
+
+  h2{font-family:var(--display);font-weight:500;font-size:21px;letter-spacing:-.01em;margin:0 0 6px}
+  .h2-sub{color:var(--muted);font-size:14.5px;margin:0 0 16px}
+  .block{margin-top:48px}
+  .cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:36px;align-items:start}
+
+  /* находки */
+  .findings{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+  .f{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;padding:15px 2px;border-bottom:1px solid var(--line)}
+  .f .dot{width:12px;height:12px;border-radius:50%;margin-top:6px;grid-row:span 2}
+  .f[data-w=crit] .dot,.f[data-w=high] .dot{background:var(--danger);box-shadow:0 0 0 4px var(--danger-soft)}
+  .f[data-w=med] .dot{background:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+  .f[data-w=low] .dot{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .f[data-w=info] .dot{background:var(--faint)}
+  .f[data-w=good] .dot{background:var(--safe);box-shadow:0 0 0 4px var(--safe-soft)}
+  .f .t{font-weight:600;font-size:15.5px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+  .f .t em{font-style:normal;font-weight:500;font-size:12px;color:var(--faint);border:1px solid var(--line-strong);border-radius:999px;padding:0 8px}
+  .f[data-w=crit] .t em{color:var(--danger);border-color:var(--danger)}
+  .f .d{color:var(--muted);font-size:14.5px}
+  .f .d code,.svc-row code{font-family:var(--mono);font-size:13px;color:var(--ink);background:var(--surface-2);padding:1px 5px;border-radius:5px;word-break:break-all}
+
+  /* сервисы */
+  .svc{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+  .svc-row{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:13px 16px;border-top:1px solid var(--line)}
+  .svc-row:first-child{border-top:0}
+  .svc-row .nm{font-weight:600;font-size:14.5px}
+  .svc-row .wh{font-size:12.5px;color:var(--faint)}
+  .svc-row .res{grid-column:1/-1;font-size:13.5px;color:var(--muted);word-break:break-word;margin-top:4px}
+  .svc-row .res:empty{display:none}
+  .pill{align-self:start;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap;background:var(--surface-2);color:var(--muted)}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .pill[data-s=run]{color:var(--accent)}
+  .pill[data-s=run]::before{animation:blink 1s infinite}
+  .pill[data-s=ok]{background:var(--safe-soft);color:var(--safe)}
+  .pill[data-s=warn]{background:var(--warn-soft);color:var(--warn)}
+  .pill[data-s=bad]{background:var(--danger-soft);color:var(--danger)}
+  .pill[data-s=err],.pill[data-s=skip]{color:var(--faint)}
+  @keyframes blink{50%{opacity:.25}}
+
+  /* символы */
+  .glyphs{display:flex;flex-wrap:wrap;gap:6px}
+  .g{width:62px;border:1px solid var(--line);border-radius:10px;padding:8px 4px 6px;text-align:center;background:var(--surface)}
+  .g .c{font-family:var(--mono);font-size:24px;line-height:1.1;min-height:27px}
+  .g .u{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px}
+  .g .sc{font-size:10.5px;color:var(--muted)}
+  .g.bad{border-color:var(--danger);background:var(--danger-soft)}
+  .g.bad .sc{color:var(--danger);font-weight:600}
+  .g.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .g.warn .sc{color:var(--warn);font-weight:600}
+  .g.dot-g{width:26px;border-color:transparent;background:transparent}
+  .twin{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+  .twin:empty{display:none}
+  .twin div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+  .twin span{display:block;font-size:12.5px;color:var(--faint)}
+  .twin code{font-family:var(--mono);font-size:15px;word-break:break-all}
+
+  /* переадресации */
+  .hop{display:grid;grid-template-columns:28px 1fr;gap:12px;align-items:start}
+  .hop .num{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--muted);background:var(--bg)}
+  .hop .body{padding-bottom:18px;min-width:0}
+  .hop .lab{font-size:12.5px;color:var(--faint)}
+  .hop code{font-family:var(--mono);font-size:14.5px;word-break:break-all}
+  .hop.final .num{border-color:var(--accent);color:var(--accent)}
+
+  /* ручные сервисы */
+  .manual{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .m{display:block;border:1px solid var(--line);border-radius:14px;padding:13px 15px;text-decoration:none;color:var(--ink);background:var(--surface);transition:border-color .15s}
+  .m:hover{border-color:var(--accent)}
+  .m b{font-weight:600;font-size:15px;display:block}
+  .m span{font-size:13px;color:var(--muted)}
+
+  /* ключ API */
+  details.keys{margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+  details.keys summary{cursor:pointer;padding:13px 16px;font-size:14.5px;font-weight:500}
+  details.keys .in{padding:0 16px 16px;font-size:14px;color:var(--muted)}
+  details.keys input{width:100%;margin-top:8px;height:42px;border-radius:10px;border:1px solid var(--line-strong);background:var(--field);color:var(--ink);font-family:var(--mono);font-size:14px;padding:0 12px}
+
+  .note{margin-top:48px;border-left:3px solid var(--warn);padding:4px 0 4px 16px;color:var(--muted);font-size:14.5px;max-width:78ch}
+  .note b{color:var(--ink)}
+  footer{margin:56px 0 34px;padding-top:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:var(--faint);font-size:13.5px}
+  footer a{color:var(--muted)}
+
+  .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:.2s}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:860px){ .cols{grid-template-columns:1fr} }
+  @media (max-width:560px){
+    .go{flex:1 1 100%}
+    .verdict{grid-template-columns:1fr;padding:22px 18px}
+    .score{text-align:left}
+    .icon-btn .lbl{display:none}
+    .icon-btn{padding:0 11px}
+    .lens{padding:18px 16px 14px}
+    .g{width:54px}
+  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <a class="brand" href="./" aria-label="Линза, на главную">
+      <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20.5 20.5 29 29" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/><path d="M8 13h10" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/></svg>
+      <b>Линза</b>
+    </a>
+    <div class="top-actions">
+      <button class="icon-btn theme-btn" id="themeBtn" type="button" aria-label="Переключить тему">
+        <svg class="moon" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 14.5A9 9 0 0 1 9.5 3a9 9 0 1 0 11.5 11.5z"/></svg>
+        <svg class="sun" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>
+        <span class="lbl" id="themeLbl">Тема</span>
+      </button>
+      <a class="icon-btn" href="https://github.com/ultimate390/linza" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span class="lbl">GitHub</span>
+      </a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Проверь ссылку, прежде чем открыть её</h1>
+    <p class="lede">Линза разбирает адрес по частям, ищет подменённые буквы и невидимые символы, раскрывает сокращённые ссылки и сверяет домен с защитными DNS, реестром доменов и веб-архивом. Всё работает прямо в браузере, без сервера.</p>
+  </section>
+
+  <form class="probe" id="form" autocomplete="off">
+    <div class="field">
+      <input id="url" type="text" inputmode="url" spellcheck="false" placeholder="Вставь ссылку: https://… или bit.ly/…" aria-label="Ссылка для проверки">
+      <button class="go" id="go" type="submit">Проверить</button>
+    </div>
+    <div class="under">
+      <div class="examples">
+        <span>Примеры:</span>
+        <button class="chip" type="button" data-ex="https://github.com/ultimate390">обычная</button>
+        <button class="chip" type="button" data-ex="http://paypal.com.secure-login.account-verify.xyz/signin">фишинг</button>
+        <button class="chip" type="button" data-ex="https://аррӏе.com/id/login">подмена букв</button>
+        <button class="chip" type="button" data-ex="https://bit.ly/3xR2k9">сокращатель</button>
+        <button class="chip" type="button" data-ex="http://support@bank-update.tk/invoice.pdf.exe?next=https%3A%2F%2Fevil.top%2Fpay">трюки</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="netOn" checked> Сетевые проверки</label>
+    </div>
+    <details class="keys">
+      <summary>Свой ключ Google Safe Browsing (по желанию)</summary>
+      <div class="in">
+        С ключом Линза дополнительно сверит ссылку с базой Google Safe Browsing. Ключ хранится только в этом браузере. Получить его бесплатно можно в Google Cloud Console, включив Safe Browsing API.
+        <input id="gsbKey" type="password" placeholder="AIza…" aria-label="Ключ Google Safe Browsing">
+      </div>
+    </details>
+  </form>
+
+  <div class="lens" id="lens" aria-live="polite">
+    <div class="lens-empty">Здесь появится разбор адреса: протокол, поддомены, настоящий домен, путь и параметры.</div>
+  </div>
+
+  <section id="result" aria-live="polite">
+    <div class="verdict" id="verdict" data-lvl="safe">
+      <div>
+        <div class="lvl" id="lvl">—</div>
+        <div class="sub" id="vsub"></div>
+      </div>
+      <div class="score"><div class="n"><span id="scoreN">0</span><small> / 100</small></div><div class="l">уровень риска</div></div>
+      <div class="meter" aria-hidden="true"><i id="needle"></i></div>
+      <div class="progress">
+        <span id="prog"></span>
+        <span class="actions">
+          <button class="small-btn" type="button" id="copyReport">Скопировать отчёт</button>
+          <button class="small-btn" type="button" id="copyLink">Ссылка на проверку</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="block cols">
+      <div>
+        <h2>Что нашлось</h2>
+        <p class="h2-sub" id="fsub"></p>
+        <div class="findings" id="findings"></div>
+      </div>
+      <div>
+        <h2>Живые проверки</h2>
+        <p class="h2-sub">Запросы идут из твоего браузера прямо к сервисам.</p>
+        <div class="svc" id="svc"></div>
+      </div>
+    </div>
+
+    <div class="block" id="charBlock">
+      <h2>Символы в домене</h2>
+      <p class="h2-sub" id="charSub"></p>
+      <div class="twin" id="twin"></div>
+      <div class="glyphs" id="glyphs"></div>
+    </div>
+
+    <div class="block" id="redirBlock">
+      <h2>Сокращатели и переадресации</h2>
+      <p class="h2-sub" id="redirSub"></p>
+      <div id="chain"></div>
+      <div id="redirAct"></div>
+    </div>
+
+    <div class="block">
+      <h2>Перепроверить в других сервисах</h2>
+      <p class="h2-sub">Эти сервисы не принимают запросы с чужих сайтов, поэтому открываются в новой вкладке с уже подставленным адресом.</p>
+      <div class="manual" id="manual"></div>
+    </div>
+
+    <p class="note"><b>Это помощник, а не гарантия.</b> Линза оценивает адрес и репутацию домена, но не открывает саму страницу. Совсем новый фишинговый сайт может ещё не попасть ни в одну базу. Если ссылка просит пароль, код из СМС или данные карты, лучше зайти на сайт вручную, набрав адрес самому.</p>
+  </section>
+
+  <footer>
+    <span>Линза, проект <a href="https://github.com/ultimate390" target="_blank" rel="noopener">@ultimate390</a></span>
+    <span>Без сервера и без трекеров. Адрес уходит только в сервисы из списка проверок.</span>
+  </footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<!-- ================= АНАЛИЗ АДРЕСА (чистая логика, без DOM) ================= -->
+<script>
+(function(root){
+  "use strict";
+
+  const SHORTENERS=new Set("bit.ly bitly.com bit.do j.mp tinyurl.com tiny.one tiny.cc goo.gl g.co t.co ow.ly is.gd v.gd buff.ly cutt.ly cutt.us rebrand.ly rb.gy t.ly shorturl.at short.io short.gy shrtco.de 9qr.de shiny.link soo.gd clck.ru vk.cc u.to qr.ae cli.re lnkd.in adf.ly adfoc.us bc.vc x.co po.st s.id snip.ly shorte.st sh.st ouo.io ouo.press linkvertise.com link-to.net exe.io fc.lc gg.gg 2.gd tr.im mcaf.ee db.tt amzn.to amzn.eu a.co youtu.be fb.me m.me wa.me redd.it lnk.to hyperurl.co bl.ink dub.sh kutt.it tiny.pl urlz.fr zpr.io trib.al ift.tt dlvr.it wp.me flic.kr spoti.fi apple.co msft.it aka.ms 1url.com urlr.me qrco.de qrs.ly surl.li shorturl.ru ya.cc cc.cc 0rz.tw pse.is reurl.cc n9.cl rotf.lol han.gl me2.kr lc.cx linkly.link ulvis.net shrinke.me shrinkme.io clk.sh cuty.io gplinks.co droplink.co tii.la oke.io t2m.io yourls.org v.ht bitly.is shor.by l.ead.me qr.net tinu.be".split(" "));
+  const MULTI_TLD=new Set(["co.uk","org.uk","gov.uk","ac.uk","me.uk","com.br","net.br","co.jp","ne.jp","com.au","net.au","org.au","co.in","net.in","com.tr","co.kr","com.cn","net.cn","co.za","com.mx","co.nz","com.ar","com.ua","org.ua","kiev.ua","com.ru","net.ru","org.ru","msk.ru","spb.ru","com.kz","org.kz","co.il","com.sg","com.hk","com.tw","com.my","co.id","com.pl","com.vn","com.eg","com.sa","co.th","gov.ru"]);
+  const RISKY_TLD=new Set(["zip","mov","tk","ml","ga","cf","gq","top","xyz","click","link","work","country","kim","science","party","gdn","review","stream","download","loan","racing","cricket","win","bid","date","faith","men","accountant","trade","webcam","icu","cyou","buzz","rest","monster","sbs","cfd","quest","lol","support","live","shop","online","site","website","fun","space","store","pw","cam","help","club","vip","su"]);
+  const FREE_HOSTS=["000webhostapp.com","firebaseapp.com","web.app","pages.dev","workers.dev","netlify.app","vercel.app","github.io","gitlab.io","glitch.me","weebly.com","wixsite.com","blogspot.com","ngrok.io","ngrok-free.app","ngrok.app","trycloudflare.com","repl.co","replit.dev","herokuapp.com","onrender.com","azurewebsites.net","appspot.com","r2.dev","ipfs.io","dweb.link","tilda.ws","yolasite.com","webflow.io","square.site","godaddysites.com","typedream.app","framer.website","surge.sh","duckdns.org","no-ip.org","ddns.net","serveo.net","loca.lt"];
+  // ключ: имя, которое ищем в домене; значение: официальный адрес
+  const BRANDS={google:"google.com",youtube:"youtube.com",gmail:"gmail.com",paypal:"paypal.com",apple:"apple.com",icloud:"icloud.com",microsoft:"microsoft.com",outlook:"outlook.com",office:"office.com",amazon:"amazon.com",netflix:"netflix.com",facebook:"facebook.com",instagram:"instagram.com",whatsapp:"whatsapp.com",telegram:"telegram.org",discord:"discord.com",twitter:"twitter.com",linkedin:"linkedin.com",tiktok:"tiktok.com",twitch:"twitch.tv",spotify:"spotify.com",dropbox:"dropbox.com",github:"github.com",adobe:"adobe.com",yahoo:"yahoo.com",ebay:"ebay.com",aliexpress:"aliexpress.com",roblox:"roblox.com",epicgames:"epicgames.com",steampowered:"steampowered.com",steamcommunity:"steamcommunity.com",steam:"steampowered.com",binance:"binance.com",coinbase:"coinbase.com",metamask:"metamask.io",blockchain:"blockchain.com",openai:"openai.com",chatgpt:"chatgpt.com",yandex:"yandex.ru",sberbank:"sberbank.ru",tinkoff:"tinkoff.ru",tbank:"tbank.ru",alfabank:"alfabank.ru",gosuslugi:"gosuslugi.ru",ozon:"ozon.ru",wildberries:"wildberries.ru",avito:"avito.ru",vkontakte:"vk.com",kaspi:"kaspi.kz",rambler:"rambler.ru",pochta:"pochta.ru",raiffeisen:"raiffeisen.ru",bank:""};
+  const KNOWN_OK=new Set(Object.values(BRANDS).filter(Boolean).concat(["vk.com","vk.ru","t.me","x.com","mail.ru","ya.ru","google.ru","yandex.com","yandex.net","youtu.be","microsoftonline.com","live.com","wikipedia.org","gov.ru","mos.ru","sber.ru","sberbank.com","steamstatic.com","githubusercontent.com","googleusercontent.com","googleapis.com","gstatic.com","googlevideo.com","ggpht.com","cloudflare.com","amazon.de","amazon.co.uk","amazonaws.com","appleid.apple.com","whatsapp.net","fbcdn.net","telegram.me","discord.gg","discordapp.com","twimg.com","tinkoff.com","ozon.com","wb.ru","nalog.gov.ru","nalog.ru"]));
+  const DANGER_EXT=["exe","scr","bat","cmd","apk","msi","jar","vbs","vbe","js","jse","wsf","hta","ps1","com","pif","dmg","pkg","lnk","iso","img","reg","cpl","msc","xll","docm","xlsm","pptm","appx","appinstaller"];
+  const ARCHIVE_EXT=["zip","rar","7z","tar","gz","cab","arj"];
+  const PHISH_WORDS=["login","log-in","signin","sign-in","verify","verification","secure","security","account","update","confirm","password","passwd","wallet","billing","unlock","suspend","recover","recovery","auth","2fa","otp","invoice","payment","refund","prize","bonus","gift","airdrop","claim","вход","оплата","подтверд","выигр","приз","компенсац","выплат"];
+  const REDIRECT_KEYS=/^(url|u|q|to|target|dest|destination|redirect|redirect_uri|redirect_url|redir|next|continue|return|returnurl|return_to|goto|go|link|out|away|r|forward|view|site|page)$/i;
+
+  // символы других алфавитов, похожие на латинские буквы
+  const CONF={"а":"a","е":"e","ё":"e","о":"o","р":"p","с":"c","у":"y","х":"x","к":"k","і":"i","ї":"i","ј":"j","ѕ":"s","һ":"h","ԁ":"d","ԛ":"q","ԝ":"w","ӏ":"l","ɩ":"l","ѵ":"v","ү":"y","ҝ":"k","ᴄ":"c","ᴏ":"o","ɑ":"a","ɡ":"g","ı":"i","ȷ":"j","ʏ":"y","ο":"o","α":"a","ε":"e","ι":"i","κ":"k","ν":"v","ρ":"p","τ":"t","υ":"u","χ":"x","ω":"w","β":"b","η":"n","μ":"u","ⅼ":"l","ⅰ":"i","ⅽ":"c","ⅾ":"d","ⅿ":"m","ꮪ":"s","ꭵ":"v","ꮃ":"w","օ":"o","ս":"u","հ":"h","ց":"g","ք":"p"};
+  const SCRIPTS=[["Латиница",/\p{Script=Latin}/u],["Кириллица",/\p{Script=Cyrillic}/u],["Греческий",/\p{Script=Greek}/u],["Армянский",/\p{Script=Armenian}/u],["Грузинский",/\p{Script=Georgian}/u],["Арабский",/\p{Script=Arabic}/u],["Иврит",/\p{Script=Hebrew}/u],["Китайский",/\p{Script=Han}/u],["Японский",/[\p{Script=Hiragana}\p{Script=Katakana}]/u],["Корейский",/\p{Script=Hangul}/u],["Чероки",/\p{Script=Cherokee}/u],["Тайский",/\p{Script=Thai}/u]];
+  const SHORT_SCRIPT={"Латиница":"лат","Кириллица":"кирил","Греческий":"греч","Армянский":"арм","Грузинский":"груз","Арабский":"араб","Иврит":"иврит","Китайский":"кит","Японский":"яп","Корейский":"кор","Чероки":"чероки","Тайский":"тай","Цифра":"цифра","Знак":"знак","Другое":"?"};
+  const INVISIBLE=/[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\u3164\uFEFF\uFFA0]/g;
+  const FAKE_PUNCT={"\u2044":"косая черта дроби, похожа на /","\u2215":"знак деления, похож на /","\u29F8":"большая косая, похожа на /","\uFF0F":"широкая косая, похожа на /","\u3002":"китайская точка, похожа на .","\uFF0E":"широкая точка, похожа на .","\uFF61":"полуширинная точка, похожа на .","\u2024":"точка-заполнитель, похожа на .","\uFE52":"маленькая точка, похожа на .","\uFF20":"широкая @","\uFE6B":"маленькая @","\u02D0":"модификатор, похож на :","\uA789":"модификатор, похож на :"};
+
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const cp=ch=>"U+"+ch.codePointAt(0).toString(16).toUpperCase().padStart(4,"0");
+  const dec=s=>{try{return decodeURIComponent(s);}catch(e){return s;}};
+
+  /* Punycode (RFC 3492): превращаем xn--… обратно в буквы */
+  function punyDecode(input){
+    const base=36,tMin=1,tMax=26,skew=38,damp=700;
+    let n=128,i=0,bias=72;const out=[];
+    let b=input.lastIndexOf("-"); if(b<0)b=0;
+    for(let j=0;j<b;j++){const c=input.charCodeAt(j);if(c>=128)throw new Error("bad");out.push(c);}
+    const adapt=(delta,num,first)=>{delta=first?Math.floor(delta/damp):delta>>1;delta+=Math.floor(delta/num);let k=0;while(delta>((base-tMin)*tMax)>>1){delta=Math.floor(delta/(base-tMin));k+=base;}return k+Math.floor((base-tMin+1)*delta/(delta+skew));};
+    for(let idx=b>0?b+1:0;idx<input.length;){
+      const oldi=i;let w=1;
+      for(let k=base;;k+=base){
+        if(idx>=input.length)throw new Error("bad");
+        const c=input.charCodeAt(idx++);
+        const d=(c>=48&&c<=57)?c-22:(c>=65&&c<=90)?c-65:(c>=97&&c<=122)?c-97:base;
+        if(d>=base)throw new Error("bad");
+        i+=d*w;
+        const t=k<=bias?tMin:(k>=bias+tMax?tMax:k-bias);
+        if(d<t)break;
+        w*=base-t;
+      }
+      const len=out.length+1;
+      bias=adapt(i-oldi,len,oldi===0);
+      n+=Math.floor(i/len);i%=len;
+      out.splice(i++,0,n);
+    }
+    return String.fromCodePoint(...out);
+  }
+  const toUnicodeHost=h=>h.split(".").map(l=>{if(/^xn--/i.test(l)){try{return punyDecode(l.slice(4).toLowerCase());}catch(e){return l;}}return l;}).join(".");
+
+  function scriptOf(ch){ for(const [n,re] of SCRIPTS) if(re.test(ch)) return n; if(/[0-9]/.test(ch))return "Цифра"; if(/[-._]/.test(ch))return "Знак"; return "Другое"; }
+  function lookOf(ch){ if(CONF[ch])return CONF[ch]; if(!/[^\x00-\x7f]/.test(ch))return null; const b=ch.normalize("NFKD").replace(/\p{M}/gu,""); return b!==ch&&/^[\x00-\x7f]+$/.test(b)?b.toLowerCase():null; }
+  function skeleton(s){ return [...s.normalize("NFKC").toLowerCase()].map(c=>lookOf(c)||c).join(""); }
+  function looseSkeleton(s){ return skeleton(s).replace(/rn/g,"m").replace(/vv/g,"w").replace(/0/g,"o").replace(/[1|]/g,"l").replace(/3/g,"e").replace(/5/g,"s").replace(/4/g,"a").replace(/7/g,"t"); }
+  function lev(a,b){ if(a===b)return 0; const m=a.length,n=b.length; if(Math.abs(m-n)>2)return 9; let p=Array.from({length:n+1},(_,j)=>j); for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++){c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));}p=c;} return p[n]; }
+
+  function splitHost(host){
+    const free=FREE_HOSTS.find(f=>host.endsWith("."+f));
+    if(free){ const rest=host.slice(0,-free.length-1).split("."); return {tld:free,dom:rest.pop(),sub:rest.join(".")}; }
+    const parts=host.split(".").filter(Boolean);
+    if(parts.length<2) return {sub:"",dom:host,tld:""};
+    const tl=MULTI_TLD.has(parts.slice(-2).join("."))&&parts.length>2?2:1;
+    return {tld:parts.slice(-tl).join("."),dom:parts[parts.length-1-tl]||"",sub:parts.slice(0,parts.length-1-tl).join(".")};
+  }
+  function rawHostOf(raw){
+    let s=raw.trim().replace(/^[a-z][a-z0-9+.\-]*:\/\//i,"");
+    s=s.split(/[\/?#\\]/)[0];
+    const at=s.lastIndexOf("@"); if(at>=0)s=s.slice(at+1);
+    return s.replace(/:\d*$/,"").replace(/^\[|\]$/g,"");
+  }
+  const isIPv4=h=>/^\d{1,3}(\.\d{1,3}){3}$/.test(h);
+  function isPrivateIP(ip){ if(!isIPv4(ip))return false; const [a,b]=ip.split(".").map(Number); return a===10||a===127||a===0||(a===172&&b>=16&&b<=31)||(a===192&&b===168)||(a===169&&b===254)||(a===100&&b>=64&&b<=127); }
+  function isShortener(host){ if(SHORTENERS.has(host))return true; const p=host.split("."); return p.length>2&&SHORTENERS.has(p.slice(-2).join(".")); }
+  function isKnown(reg,host){ return KNOWN_OK.has(reg)||KNOWN_OK.has(host); }
+
+  function findNested(u){
+    const out=[];
+    for(const [k,v] of u.searchParams){
+      let val=v; for(let i=0;i<2&&/%[0-9a-f]{2}/i.test(val);i++) val=dec(val);
+      if(/^(https?:)?\/\/[^\s]+\.[^\s]+/i.test(val)||(/^www\.[^\s]+\.[a-z]{2,}/i.test(val)&&REDIRECT_KEYS.test(k))){
+        out.push({key:k,url:/^\/\//.test(val)?"https:"+val:(/^www\./i.test(val)?"https://"+val:val)});
+      }
+    }
+    const pm=dec(u.pathname).match(/\/(https?:\/\/?[^\s]+\.[^\s]+)/i);
+    if(pm) out.push({key:"путь",url:pm[1].replace(/^(https?:)\/(?!\/)/i,"$1//")});
+    return out;
+  }
+
+  /* ================= основной офлайн-анализ ================= */
+  function analyze(input){
+    let raw=String(input||"").trim();
+    const F=[];
+    const add=(w,t,d,src)=>F.push({w,t,d,src:src||"адрес"});
+    if(!raw) return {error:"Пустая строка."};
+
+    // невидимые и управляющие символы ищем до любой нормализации
+    const inv=[...raw.matchAll(INVISIBLE)];
+    if(inv.length){
+      const bidi=inv.some(m=>/[\u202A-\u202E\u2066-\u2069\u200E\u200F\u061C]/.test(m[0]));
+      add(bidi?"crit":"high",bidi?"Символ разворота текста (RTL-трюк)":"Невидимые символы в ссылке",
+        (bidi?"Символы управления направлением текста переставляют буквы на экране: видно одно, открывается другое. ":"В адресе спрятаны символы нулевой ширины, глазом их не видно. ")+"Найдено: "+[...new Set(inv.map(m=>cp(m[0])))].join(", ")+".","символы");
+      raw=raw.replace(INVISIBLE,"");
+    }
+    const fakeP=[...new Set([...raw].filter(c=>FAKE_PUNCT[c]))];
+    if(fakeP.length) add("crit","Поддельные знаки препинания",fakeP.map(c=>"<code>"+esc(c)+"</code> "+FAKE_PUNCT[c]).join("; ")+". Так адрес визуально «разрезают», чтобы начало выглядело как известный сайт.","символы");
+
+    const lower=raw.toLowerCase();
+    if(/^(javascript|data|vbscript|blob):/i.test(lower)){
+      add("crit","Опасная схема «"+esc(lower.split(":")[0])+":»","Это не адрес сайта. Такая ссылка выполняет код или показывает подготовленную страницу прямо у тебя. Настоящие ссылки так не выглядят.");
+      return {raw,F,u:null,special:true};
+    }
+
+    let u,noScheme=false;
+    try{ u=new URL(raw); if(!/^(https?|ftp):$/.test(u.protocol)) throw 0; }
+    catch(e){ try{u=new URL("http://"+raw);noScheme=true;}catch(e2){return {error:"Это не похоже на ссылку. Проверь, что адрес вставлен целиком."};} }
+    if(!u.hostname||!/[.:]/.test(u.hostname)&&u.hostname!=="localhost") return {error:"В ссылке нет адреса сайта (нужна хотя бы одна точка, например site.com)."};
+
+    const asciiHost=u.hostname.toLowerCase().replace(/\.$/,"").replace(/^\[|\]$/g,"");
+    const rawHost=rawHostOf(raw).toLowerCase().replace(/\.$/,"");
+    const uniHost=/[^\x00-\x7f]/.test(rawHost)?rawHost.normalize("NFC"):toUnicodeHost(asciiHost);
+    const isIP=isIPv4(asciiHost)||asciiHost.includes(":");
+    const {sub,dom,tld}=isIP?{sub:"",dom:asciiHost,tld:""}:splitHost(asciiHost);
+    const uni=isIP?{sub:"",dom:asciiHost,tld:""}:splitHost(uniHost);
+    const registrable=isIP?asciiHost:(dom&&tld?dom+"."+tld:asciiHost);
+    const uniRegistrable=isIP?asciiHost:(uni.dom&&uni.tld?uni.dom+"."+uni.tld:uniHost);
+    const known=isKnown(registrable,asciiHost);
+    const lastTld=tld.split(".").pop();
+
+    // схема и соединение
+    if(noScheme) add("info","Схема не указана","Адрес вставлен без http:// или https://. Проверка шла так, будто это http.");
+    if(u.protocol==="http:"&&!noScheme) add("low","Соединение без шифрования (http)","Всё, что ты введёшь на такой странице, идёт открытым текстом. Для входа в аккаунт или оплаты это недопустимо.");
+    if(u.protocol==="ftp:") add("low","Протокол FTP","Устаревший протокол передачи файлов без шифрования. В обычных ссылках почти не встречается.");
+
+    // логин@ перед адресом
+    if(u.username||u.password) add("crit","Знак @ перед адресом сайта","Всё до @ браузер считает логином и отбрасывает. «"+esc(dec(u.username))+"» здесь просто декорация, настоящий сайт: <code>"+esc(asciiHost)+"</code>.");
+
+    // IP вместо имени
+    if(isIP){
+      const priv=isPrivateIP(asciiHost);
+      add(priv?"med":"high","Вместо домена IP-адрес",priv?"Это адрес из локальной сети (роутер, принтер, домашний сервер). В письме от незнакомца такой ссылки быть не должно.":"Настоящие сервисы работают на именах вроде site.com. Голый IP часто означает временный сервер злоумышленника.");
+      if(!isIPv4(rawHost)&&/^[0-9a-fx.]+$/i.test(rawHost)) add("high","IP записан в запутанном виде","В ссылке написано «"+esc(rawHost)+"», а браузер превращает это в <code>"+esc(asciiHost)+"</code>. Десятичная или шестнадцатеричная запись IP нужна только для маскировки.");
+    }
+
+    // символы домена
+    const chars=[]; let mixedHit=false; const lookLabels=[];
+    if(!isIP){
+      if(uniHost.normalize("NFKC")!==uniHost) add("high","Широкие или стилизованные символы","Часть букв записана «широкими» или декоративными формами Юникода. Браузер приводит их к обычным, а человек видит знакомый адрес.","символы");
+      uniHost.split(".").forEach((lab,li)=>{
+        if(li>0) chars.push({ch:".",dot:true});
+        const arr=[...lab];
+        const scripts=new Set(arr.map(scriptOf).filter(s=>!["Цифра","Знак","Другое"].includes(s)));
+        const mixed=scripts.size>1;
+        const nonAsc=arr.filter(c=>/[^\x00-\x7f]/.test(c));
+        const allLook=nonAsc.length>0&&nonAsc.every(c=>lookOf(c));
+        if(mixed){ mixedHit=true; add("crit","Смешаны алфавиты в одном слове: "+esc(lab),"В части «"+esc(lab)+"» перемешаны "+[...scripts].join(" и ").toLowerCase()+". У настоящих доменов так не бывает, это подмена букв (гомоглифы).","символы"); }
+        else if(allLook) lookLabels.push(lab);
+        for(const ch of arr){
+          const lk=lookOf(ch), sc=scriptOf(ch), na=/[^\x00-\x7f]/.test(ch);
+          chars.push({ch,code:cp(ch),script:sc,lookalike:lk||"",lvl:lk&&(mixed||allLook)?"bad":(na&&mixed?"warn":"")});
+        }
+      });
+      if(asciiHost.includes("xn--")||uniHost!==asciiHost){
+        add(mixedHit||lookLabels.length?"med":"info","Домен записан не латиницей (IDN)","Браузер хранит его как <code>"+esc(asciiHost)+"</code>, а на экране ты видишь <code>"+esc(uniHost)+"</code>. "+(mixedHit||lookLabels.length?"Сверь буквы в разделе «Символы в домене».":"Для доменов вроде .рф это нормально."),"символы");
+      }
+
+      // двойник известного бренда
+      let brandHit=null;
+      if(!known){
+        const skel=skeleton(uni.dom), lskel=looseSkeleton(uni.dom);
+        for(const [b,real] of Object.entries(BRANDS)){
+          if(!real) continue;
+          const realDom=real.split(".")[0];
+          if(skel===realDom||lskel===realDom){
+            if(uni.dom===realDom) brandHit={b,real,kind:"tld"};
+            else if(/[^\x00-\x7f]/.test(uni.dom)&&skel===realDom) brandHit={b,real,kind:"homoglyph"};
+            else brandHit={b,real,kind:"digits"};
+            break;
+          }
+          if(realDom.length>=5&&dom.length>=4){
+            const d=lev(lskel,realDom);
+            if(d>0&&d<=(realDom.length>=8?2:1)){brandHit={b,real,kind:"typo",d};break;}
+          }
+        }
+      }
+      if(brandHit){
+        const k=brandHit.kind;
+        if(k==="homoglyph") add("crit","Двойник домена "+brandHit.real,"«"+esc(uniRegistrable)+"» выглядит как "+brandHit.real+", но собран из букв другого алфавита. Это совсем другой сайт.","символы");
+        else if(k==="digits") add("crit","Подменённые буквы: копия "+brandHit.real,"«"+esc(uniRegistrable)+"» подменяет буквы похожими цифрами или сочетаниями (rn вместо m, 0 вместо o, 1 вместо l). Настоящий сайт: "+brandHit.real+".","символы");
+        else if(k==="tld") add(RISKY_TLD.has(lastTld)?"high":"info","Имя бренда в зоне ."+esc(uni.tld),RISKY_TLD.has(lastTld)?"Настоящий сайт: "+brandHit.real+". Здесь то же имя в дешёвой зоне ."+esc(lastTld)+", и принадлежать он может кому угодно.":"Официальный адрес: "+brandHit.real+". У многих компаний есть региональные сайты, но убедись, что этот действительно их.");
+        else add("high","Опечатка в имени "+brandHit.real,"«"+esc(registrable)+"» отличается от "+brandHit.real+" на "+brandHit.d+" "+(brandHit.d===1?"букву":"буквы")+". Такие домены регистрируют в расчёте на невнимательность (тайпсквоттинг).");
+      }
+      if(!brandHit&&lookLabels.length) add("high","Слово целиком из букв-двойников: "+esc(lookLabels[0]),"Все не латинские буквы в «"+esc(lookLabels[0])+"» выглядят как латинские. Домен притворяется написанным латиницей: <code>"+esc(skeleton(lookLabels[0]))+"</code>.","символы");
+
+      // бренд в поддомене или приклеен к чужому домену
+      if(!known&&!brandHit){
+        const bSub=Object.keys(BRANDS).find(b=>b.length>=4&&sub.split(/[.\-]/).some(p=>p===b||p.startsWith(b)));
+        if(bSub) add("high","Имя «"+bSub+"» стоит в поддомене","Слева видно «"+esc(bSub)+"», но настоящий домен здесь <code>"+esc(registrable)+"</code>, и к "+(BRANDS[bSub]||"банку")+" он отношения не имеет.");
+        const ldom=looseSkeleton(uni.dom);
+        const bDom=Object.keys(BRANDS).find(b=>BRANDS[b]&&b.length>=4&&ldom!==b&&ldom.split("-").some(p=>p.startsWith(b)));
+        if(bDom&&!bSub) add("high","Имя «"+bDom+"» приклеено к другим словам","Домены вида «"+esc(dom)+"» часто регистрируют мошенники, чтобы выглядеть официально. Настоящий адрес: "+BRANDS[bDom]+".");
+      }
+
+      // зона, поддомены, форма имени
+      if(RISKY_TLD.has(lastTld)){
+        const fileLike=["zip","mov"].includes(lastTld);
+        add(fileLike?"high":"med","Зона ."+esc(lastTld),fileLike?"Зона совпадает с расширением файла, и адрес «"+esc(dom)+"."+lastTld+"» легко принять за имя архива или видео.":"Домены в этой зоне дешёвые, и их массово берут под одноразовые мошеннические сайты. Не приговор, но повод присмотреться.");
+      }
+      const depth=asciiHost.split(".").length;
+      const fdom=uni.dom;
+      if(depth>=5) add("med","Слишком много уровней в имени ("+depth+")","Длинная цепочка поддоменов прячет настоящий домен в конце. Смотри на последние части: <code>"+esc(registrable)+"</code>.");
+      if(!known&&(fdom.match(/-/g)||[]).length>=2) add("low","Много дефисов в домене","Имена вроде «secure-login-update» чаще штампуют мошенники, чем настоящие компании.");
+      if(!known&&/\d/.test(fdom)&&/[a-z]/.test(fdom)&&(fdom.match(/\d/g)||[]).length>=3) add("low","Много цифр вперемешку с буквами","Случайные сочетания цифр и букв типичны для одноразовых доменов.");
+      if(!known&&fdom.length>=24) add("low","Очень длинное имя домена","Настоящие бренды выбирают короткие имена. Длинное обычно собирают из «доверительных» слов.");
+      if(!known&&fdom.length>=8&&/^[bcdfghjklmnpqrstvwxz0-9]+$/.test(fdom)) add("low","Имя похоже на случайный набор букв","Такие адреса обычно генерируют автоматически для вредоносных рассылок.");
+      const free=FREE_HOSTS.find(f=>asciiHost===f||asciiHost.endsWith("."+f));
+      if(free) add(free==="github.io"?"info":"low","Сайт на бесплатном хостинге ("+free+")","Такой адрес может завести кто угодно за минуту. Владельца определяет часть перед "+free+": <code>"+esc(asciiHost.slice(0,-free.length-1)||asciiHost)+"</code>.");
+    }
+
+    // порт
+    if(u.port&&!["80","443"].includes(u.port)) add("low","Нестандартный порт :"+u.port,"Обычные сайты работают без явного порта. Для ссылки из письма или мессенджера это необычно.");
+
+    // путь, параметры, файлы
+    const pathQ=dec(u.pathname+u.search).toLowerCase();
+    if(!known){
+      const pw=[...new Set(PHISH_WORDS.filter(w=>pathQ.includes(w)||(w.length>=5&&asciiHost.includes(w))))];
+      if(pw.length) add(pw.length>=3?"med":"low","Слова-приманки: "+pw.slice(0,5).join(", "),"Сами по себе слова безобидны, но на неизвестном домене они типичны для страниц «подтвердите вход» и «получите выплату».");
+      const bPath=Object.keys(BRANDS).find(b=>BRANDS[b]&&b.length>=4&&pathQ.includes(b)&&!asciiHost.includes(b));
+      if(bPath) add("low","Имя «"+bPath+"» только в пути","Название встречается в адресе страницы, но не в домене. Так создают видимость официального сайта.");
+    }
+    const fname=dec(u.pathname.split("/").pop()||"").toLowerCase();
+    const exts=fname.split(".").slice(1), ext=exts[exts.length-1]||"";
+    if(DANGER_EXT.includes(ext)&&!(ext==="js"&&known)){
+      const dbl=exts.length>=2&&!DANGER_EXT.includes(exts[exts.length-2])&&/^[a-z0-9]{2,5}$/.test(exts[exts.length-2]);
+      add(dbl?"crit":"high",dbl?"Двойное расширение ."+esc(exts.slice(-2).join(".")):"Ссылка скачивает программу (."+esc(ext)+")",dbl?"Файл притворяется документом «."+esc(exts[exts.length-2])+"», а на самом деле это исполняемый ."+esc(ext)+". Не запускай его.":"По ссылке лежит файл, который выполняется на компьютере или телефоне. Из непроверенной ссылки такое запускать нельзя.");
+    } else if(ARCHIVE_EXT.includes(ext)) add("low","Ссылка на архив (."+esc(ext)+")","Архивами часто проносят вредоносный файл мимо почтовых фильтров. Не открывай файлы внутри, если не ждал их.");
+    const nested=findNested(u);
+    if(nested.length) add(known?"low":"med","Внутри ссылки спрятана другая ссылка","Параметр «"+esc(nested[0].key)+"» ведёт на <code>"+esc(nested[0].url.slice(0,120))+"</code>. Через такие переадресации тебя уводят не туда, куда кажется.","переадресация");
+    if(raw.length>120) add("low","Очень длинный адрес ("+raw.length+" символов)","Длинный хвост параметров помогает спрятать настоящую цель и сбить с толку.");
+    const pct=(raw.match(/%[0-9a-f]{2}/gi)||[]).length;
+    if(pct>=6) add("low","Много закодированных символов ("+pct+")","Кодирование %XX иногда используют, чтобы скрыть слова в адресе от глаз и фильтров.");
+    if(/%25[0-9a-f]{2}/i.test(raw)) add("med","Двойное кодирование","В адресе есть %25XX, то есть символы закодированы дважды. Обычным сайтам это не нужно, это трюк для обхода фильтров.");
+
+    const shortener=!isIP&&isShortener(asciiHost);
+    if(shortener) add("med","Сокращатель ссылок ("+esc(asciiHost)+")","Настоящая цель скрыта. Линза попробует раскрыть её через сервисы, не открывая страницу у тебя.","сокращатель");
+
+    if(known&&!F.some(f=>["crit","high"].includes(f.w))) add("good","Официальный домен известного сервиса","<code>"+esc(registrable)+"</code> есть в списке известных сайтов. Проверь только, что путь ведёт туда, куда ты ожидаешь.");
+
+    return {raw,F,u,noScheme,asciiHost,rawHost,uniHost,isIP,sub,dom,tld,uni,registrable,uniRegistrable,known,shortener,nested,chars};
+  }
+
+  const WEIGHT={crit:45,high:28,med:15,low:6,info:0,good:0};
+  function scoreOf(findings,extra){
+    let s=0; for(const f of findings) s+=WEIGHT[f.w]||0;
+    if(findings.some(f=>f.w==="good")&&!findings.some(f=>["crit","high"].includes(f.w))) s=Math.max(0,s-10);
+    s=Math.min(100,s);
+    let lvl=s>=50?"danger":s>=20?"caution":"safe";
+    if(findings.some(f=>f.w==="crit")){lvl="danger";s=Math.max(s,70);}
+    if(extra&&extra.unresolvedShort&&lvl==="safe"){lvl="caution";s=Math.max(s,20);}
+    return {score:s,lvl};
+  }
+
+  root.Linza={analyze,scoreOf,punyDecode,toUnicodeHost,skeleton,lev,splitHost,isIPv4,isPrivateIP,isShortener,findNested,esc,dec,SHORT_SCRIPT};
+})(typeof window!=="undefined"?window:globalThis);
+</script>
+
+<!-- ================= ИНТЕРФЕЙС И СЕТЕВЫЕ ПРОВЕРКИ ================= -->
+<script>
+(function(){
+  "use strict";
+  if(typeof document==="undefined") return;
+  const L=window.Linza, esc=L.esc, dec=L.dec, $=id=>document.getElementById(id);
+  const store={get(k){try{return localStorage.getItem(k);}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,v);}catch(e){}}};
+
+  /* ---------- тема ---------- */
+  const mq=window.matchMedia("(prefers-color-scheme: dark)");
+  const curTheme=()=>document.documentElement.getAttribute("data-theme")||(mq.matches?"dark":"light");
+  const paintThemeLbl=()=>{const d=curTheme()==="dark";$("themeLbl").textContent=d?"Белая тема":"Чёрная тема";$("themeBtn").setAttribute("aria-label",d?"Включить белую тему":"Включить чёрную тему");};
+  $("themeBtn").addEventListener("click",()=>{const t=curTheme()==="dark"?"light":"dark";document.documentElement.setAttribute("data-theme",t);store.set("linza-theme",t);paintThemeLbl();});
+  if(mq.addEventListener) mq.addEventListener("change",paintThemeLbl);
+  paintThemeLbl();
+
+  /* ---------- анатомия адреса (обновляется при вводе) ---------- */
+  const EMPTY_LENS="Здесь появится разбор адреса: протокол, поддомены, настоящий домен, путь и параметры.";
+  function renderLens(r){
+    const box=$("lens");
+    if(!r||r.error||!r.u){box.innerHTML='<div class="lens-empty">'+(r&&r.error?esc(r.error):r&&r.special?"Это не веб-адрес, а исполняемая ссылка. Разбирать тут нечего, открывать её нельзя.":EMPTY_LENS)+"</div>";return;}
+    const u=r.u, has=re=>r.F.some(f=>re.test(f.t));
+    const seg=(cls,v,k,flag)=>'<span class="seg '+cls+(flag?" "+flag:"")+'"><span class="v">'+esc(v)+'</span><span class="k">'+esc(k)+"</span></span>";
+    let h=seg("s-proto",u.protocol.replace(":",""),"протокол",u.protocol==="http:"&&!r.noScheme?"warn":"")+seg("s-sep","://"," ");
+    if(u.username) h+=seg("s-user",dec(u.username)+(u.password?":•••":"")+"@","обманка до @","bad");
+    if(r.isIP) h+=seg("s-dom",r.asciiHost,"IP-адрес","bad");
+    else{
+      const U=r.uni;
+      if(U.sub) h+=seg("s-sub",U.sub+".","поддомен",has(/поддомен|уровней|Имя «/)?"warn":"");
+      const domFlag=has(/Двойник|Подменённые|Смешаны|Опечатка|букв-двойников|в зоне/)?"bad":has(/приклеено|дефис|цифр|случайный|IDN|бесплатном/)?"warn":"";
+      h+=seg("s-dom",U.dom||r.uniHost,"настоящий домен",domFlag);
+      if(U.tld) h+=seg("s-tld","."+U.tld,"зона",has(/^Зона/)?"warn":"");
+    }
+    if(u.port) h+=seg("s-rest",":"+u.port,"порт","warn");
+    if(u.pathname&&u.pathname!=="/") h+=seg("s-rest",dec(u.pathname),"путь",has(/программу|расширение/)?"bad":"");
+    if(u.search) h+=seg("s-rest",u.search.length>90?u.search.slice(0,90)+"…":u.search,"параметры",r.nested&&r.nested.length?"warn":"");
+    if(u.hash) h+=seg("s-rest",u.hash.length>40?u.hash.slice(0,40)+"…":u.hash,"якорь");
+    const note=r.isIP?"У сайта нет имени, адрес указан цифрами.":"Кому принадлежит сайт, решает только эта часть: <b>"+esc(r.uniRegistrable)+"</b>"+(r.uniRegistrable!==r.registrable?", а для браузера это <b>"+esc(r.registrable)+"</b>":"")+".";
+    box.innerHTML='<div class="segs">'+h+'</div><div class="lens-note">'+note+"</div>";
+  }
+  let typingT;
+  $("url").addEventListener("input",()=>{clearTimeout(typingT);typingT=setTimeout(()=>{const v=$("url").value.trim();renderLens(v?L.analyze(v):null);},120);});
+
+  /* ---------- сетевые запросы ---------- */
+  async function getJSON(url,opts,ms){
+    const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),ms||9000);
+    try{
+      const r=await fetch(url,Object.assign({signal:ctl.signal,credentials:"omit",referrerPolicy:"no-referrer"},opts||{}));
+      if(r.status===404) return {status:404,data:null};
+      if(!r.ok) throw new Error("ответ HTTP "+r.status);
+      return {status:r.status,data:await r.json()};
+    }catch(e){
+      if(e.name==="AbortError") throw new Error("Сервис не ответил вовремя.");
+      if(/HTTP/.test(e.message||"")) throw new Error("Сервис вернул ошибку ("+e.message+").");
+      throw new Error("Сервис недоступен из браузера (блокировка сети или расширением).");
+    }finally{clearTimeout(t);}
+  }
+  async function doh(url,json){
+    const {data}=await getJSON(url,json?{headers:{accept:"application/dns-json"}}:{},8000);
+    if(!data) throw new Error("Пустой ответ.");
+    const ans=data.Answer||[];
+    return {rcode:data.Status,ips:ans.filter(a=>a.type===1).map(a=>a.data)};
+  }
+  const blockedIP=ip=>ip==="0.0.0.0"||ip==="127.0.0.1"||/^94\.140\.1[45]\./.test(ip)||/^146\.112\.61\.10[4-9]$/.test(ip);
+
+  const SERVICES=[
+    {id:"dns-google",nm:"Google Public DNS",wh:"существует ли домен и его IP"},
+    {id:"dns-cf",nm:"Cloudflare DNS 1.1.1.1",wh:"вторая независимая проверка DNS"},
+    {id:"flt-cf",nm:"Cloudflare 1.1.1.2",wh:"фильтр вредоносных доменов"},
+    {id:"flt-quad9",nm:"Quad9",wh:"угрозы от десятков поставщиков разведданных"},
+    {id:"flt-adguard",nm:"AdGuard DNS",wh:"фильтр фишинга и вредоносных сайтов"},
+    {id:"rdap",nm:"RDAP, реестр доменов",wh:"когда и кем зарегистрирован домен"},
+    {id:"wayback",nm:"Internet Archive",wh:"как давно сайт существует"},
+    {id:"ipinfo",nm:"ipwho.is / ipapi.co",wh:"страна и хостинг сервера"},
+    {id:"expand",nm:"Раскрытие ссылки",wh:"через API сокращателя или прокси allorigins.win"},
+    {id:"gsb",nm:"Google Safe Browsing",wh:"база опасных сайтов Google (свой ключ)"}
+  ];
+  const ST_TXT={wait:"ожидание",run:"проверяю",ok:"чисто",warn:"внимание",bad:"угроза",err:"нет ответа",skip:"не нужно",info:"готово"};
+
+  let state=null, runId=0;
+
+  function setSvc(id,s,res,label){
+    state.svc[id]={s,res:res||""};
+    const row=document.querySelector('[data-svc="'+id+'"]');
+    if(row){ const p=row.querySelector(".pill"); p.dataset.s=s==="info"?"ok":s; p.textContent=label||ST_TXT[s]; row.querySelector(".res").innerHTML=res||""; }
+    paintVerdict();
+  }
+  function netFinding(w,t,d,src){ state.net.push({w,t,d,src:src||"сеть"}); paintFindings(); paintVerdict(); }
+
+  async function runNetwork(r,id){
+    const alive=()=>id===runId;
+    const S=(sid,s,res,label)=>{if(alive())setSvc(sid,s,res,label);};
+    const NF=(w,t,d,src)=>{if(alive())netFinding(w,t,d,src);};
+    const host=r.asciiHost, reg=r.registrable;
+    const key=($("gsbKey").value||"").trim();
+    const DNS_IDS=["dns-google","dns-cf","flt-cf","flt-quad9","flt-adguard","rdap","wayback"];
+
+    if(r.isIP) DNS_IDS.forEach(s=>S(s,"skip","У IP-адреса нет домена."));
+    if(!r.shortener&&!(r.nested&&r.nested.length)) S("expand","skip","Ссылка не сокращена, раскрывать нечего.");
+    if(!key) S("gsb","skip","Нужен свой бесплатный ключ API, поле для него под строкой ввода.");
+
+    const tasks=[];
+    let pBase=Promise.resolve(null);
+    if(!r.isIP){
+      DNS_IDS.forEach(s=>S(s,"run"));
+      const q=encodeURIComponent(host);
+      const baseRow=(sid)=>x=>{S(sid,x.rcode===3?"warn":"ok",x.rcode===3?"Такого домена нет (NXDOMAIN).":x.ips.length?"IP: "+esc(x.ips.slice(0,4).join(", ")):"Имя существует, но без IPv4-адреса.",x.rcode===3?"нет домена":"домен есть");return x;};
+      const pG=doh("https://dns.google/resolve?name="+q+"&type=A").then(baseRow("dns-google")).catch(e=>{S("dns-google","err",esc(e.message));return null;});
+      const pC=doh("https://cloudflare-dns.com/dns-query?name="+q+"&type=A",true).then(baseRow("dns-cf")).catch(e=>{S("dns-cf","err",esc(e.message));return null;});
+      pBase=Promise.all([pG,pC]).then(([g,c])=>{
+        const b=(g&&g.ips.length?g:null)||(c&&c.ips.length?c:null)||g||c;
+        if(b&&(!g||g.rcode===3)&&(!c||c.rcode===3)) NF(r.shortener?"low":"med","Домен не существует","DNS не знает такого имени. Либо в ссылке опечатка, либо сайт уже удалён, что часто бывает с фишингом после жалоб.");
+        return b;
+      });
+      tasks.push(pBase);
+
+      const filter=(sid,name,url,json)=>doh(url,json).then(async x=>{
+        const b=await pBase;
+        if(!b||b.rcode!==0||!b.ips.length){ S(sid,"skip","Сравнивать не с чем: обычный DNS не вернул адрес."); return; }
+        const blk=x.rcode===3||x.rcode===5||x.ips.some(blockedIP)||(x.rcode===0&&!x.ips.length);
+        if(blk){ S(sid,"bad",name+" отказывается отдавать адрес этого домена.","заблокирован"); NF("crit","Заблокировано фильтром "+name,name+" считает домен вредоносным или фишинговым. Это сильный сигнал: сайт уже попал в базы угроз."); }
+        else S(sid,"ok","Фильтр пропускает домен.");
+      }).catch(e=>S(sid,"err",esc(e.message)));
+      tasks.push(filter("flt-cf","Cloudflare","https://security.cloudflare-dns.com/dns-query?name="+q+"&type=A",true));
+      tasks.push(filter("flt-quad9","Quad9","https://dns.quad9.net:5053/dns-query?name="+q+"&type=A",false));
+      tasks.push(filter("flt-adguard","AdGuard DNS","https://dns.adguard-dns.com/resolve?name="+q+"&type=A",false));
+
+      // возраст домена
+      tasks.push(getJSON("https://rdap.org/domain/"+encodeURIComponent(reg),{},10000).then(({status,data})=>{
+        if(status===404||!data){ S("rdap","skip","Реестр этой зоны не отдаёт данные по RDAP (так у .ru, .рф и ряда других). Возраст можно посмотреть через WHOIS ниже.","нет данных"); return; }
+        const ev=(data.events||[]).find(e=>/registration/i.test(e.eventAction||""));
+        let who=null; for(const en of data.entities||[]){ if((en.roles||[]).includes("registrar")){ const fn=((en.vcardArray&&en.vcardArray[1])||[]).find(v=>v[0]==="fn"); if(fn) who=fn[3]; } }
+        if(!ev){ S("rdap","info",who?"Регистратор: "+esc(who)+". Дата регистрации не указана.":"Дата регистрации не указана."); return; }
+        const d=new Date(ev.eventDate), days=Math.floor((Date.now()-d)/864e5);
+        const when=d.toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"});
+        const ago=days<1?"сегодня":days<60?days+" дн. назад":days<730?Math.round(days/30)+" мес. назад":Math.floor(days/365)+" лет назад";
+        const text="Зарегистрирован "+when+" ("+ago+")"+(who?". Регистратор: "+esc(who):"")+".";
+        if(days<30){ S("rdap","bad",text,"совсем новый"); if(!r.known) NF("high","Домену меньше месяца","Он зарегистрирован "+when+". Фишинговые сайты обычно живут считанные дни, поэтому свежий домен, похожий на известный сервис, очень подозрителен."); }
+        else if(days<180){ S("rdap","warn",text,"молодой"); if(!r.known) NF("med","Домен моложе полугода","Он зарегистрирован "+when+". Само по себе не страшно, но у известных компаний домены обычно старые."); }
+        else { S("rdap","ok",text,"давний"); if(days>1825) NF("good","Домену больше 5 лет","Он зарегистрирован "+when+". Долгая история снижает шанс, что это одноразовый фишинг."); }
+      }).catch(e=>S("rdap","err",esc(e.message))));
+
+      // веб-архив
+      tasks.push(getJSON("https://archive.org/wayback/available?url="+encodeURIComponent(host)+"&timestamp=19960101",{},10000).then(({data})=>{
+        const sn=data&&data.archived_snapshots&&data.archived_snapshots.closest;
+        if(!sn){ S("wayback","warn","В архиве нет ни одной копии этого адреса. Сайт новый или никому не нужный.","нет истории"); return; }
+        const y=sn.timestamp.slice(0,4), m=sn.timestamp.slice(4,6);
+        const link=String(sn.url||"").replace(/^http:/,"https:");
+        S("wayback","ok","Самая ранняя копия: "+m+"."+y+'. <a href="'+esc(link)+'" target="_blank" rel="noopener noreferrer">Открыть копию</a>',"есть история");
+      }).catch(e=>S("wayback","err",esc(e.message))));
+    }
+
+    // страна и хостинг
+    tasks.push((async()=>{
+      S("ipinfo","run");
+      let ip=r.isIP?r.asciiHost:null;
+      if(!ip){ const b=await pBase; ip=b&&b.ips[0]; }
+      if(!ip){ S("ipinfo","skip","IP-адрес не получен."); return; }
+      if(!L.isIPv4(ip)){ S("ipinfo","skip","Адрес IPv6, определение страны пропущено."); return; }
+      if(L.isPrivateIP(ip)){ S("ipinfo","warn","Адрес "+esc(ip)+" из частной сети.","локальный"); return; }
+      try{
+        const {data}=await getJSON("https://ipwho.is/"+encodeURIComponent(ip),{},8000);
+        if(!data||data.success===false) throw new Error("нет данных");
+        const c=data.connection||{};
+        S("ipinfo","info",esc(ip)+": "+esc([(data.flag&&data.flag.emoji)||"",data.country,data.city].filter(Boolean).join(" "))+(c.org||c.isp?", "+esc(c.org||c.isp):"")+(c.asn?" (AS"+esc(c.asn)+")":""));
+      }catch(e){
+        try{ const {data}=await getJSON("https://ipapi.co/"+encodeURIComponent(ip)+"/json/",{},8000); if(!data||data.error) throw new Error("нет");
+          S("ipinfo","info",esc(ip)+": "+esc([data.country_name,data.city].filter(Boolean).join(", "))+(data.org?", "+esc(data.org):""));
+        }catch(e2){ S("ipinfo","err",esc(e.message)); }
+      }
+    })());
+
+    // раскрытие сокращённой или вложенной ссылки
+    if(r.shortener||(r.nested&&r.nested.length)) tasks.push(expandLink(r,alive,S,NF));
+
+    // Google Safe Browsing со своим ключом
+    if(key){
+      S("gsb","run");
+      tasks.push(getJSON("https://safebrowsing.googleapis.com/v4/threatMatches:find?key="+encodeURIComponent(key),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({client:{clientId:"linza-ultimate390",clientVersion:"2.0"},threatInfo:{threatTypes:["MALWARE","SOCIAL_ENGINEERING","UNWANTED_SOFTWARE","POTENTIALLY_HARMFUL_APPLICATION"],platformTypes:["ANY_PLATFORM"],threatEntryTypes:["URL"],threatEntries:[{url:r.u.href}]}})},10000).then(({data})=>{
+        const m=data&&data.matches;
+        if(m&&m.length){ const types=esc([...new Set(m.map(x=>x.threatType))].join(", ")); S("gsb","bad","Совпадение в базе: "+types+"."); NF("crit","Есть в базе Google Safe Browsing","Google отмечает эту ссылку как опасную ("+types+"). Не открывай её."); }
+        else S("gsb","ok","В базе Google ссылка не найдена.");
+      }).catch(e=>S("gsb","err",esc(e.message)+" Проверь ключ.")));
+    }
+
+    await Promise.allSettled(tasks);
+    if(alive()){ state.done=true; paintVerdict(); paintRedirect(); }
+  }
+
+  function sniffRedirect(html,base){
+    if(!html||typeof html!=="string") return null;
+    const pats=[/http-equiv=["']?refresh["']?[^>]*content=["'][^"']*url=([^"'>\s]+)/i,/content=["'][^"']*url=([^"'>\s]+)["'][^>]*http-equiv=["']?refresh/i,/(?:window\.)?location(?:\.href)?\s*=\s*["']([^"']+)["']/i,/location\.replace\(\s*["']([^"']+)["']/i,/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i,/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i];
+    for(const p of pats){ const m=html.match(p); if(m){ try{ const u=new URL(m[1].replace(/&amp;/g,"&"),base); if(/^https?:$/.test(u.protocol)) return u.href; }catch(e){} } }
+    return null;
+  }
+  const same=(a,b)=>a.replace(/\/+$/,"").replace(/^https?:\/\//,"").replace(/^www\./,"")===b.replace(/\/+$/,"").replace(/^https?:\/\//,"").replace(/^www\./,"");
+
+  async function expandLink(r,alive,S,NF){
+    let dest=null, via="";
+    if(r.nested&&r.nested.length&&!r.shortener){ dest=r.nested[0].url; via="параметр «"+r.nested[0].key+"», без запросов в сеть"; }
+    S("expand","run");
+    if(!dest&&/^(is|v)\.gd$/.test(r.asciiHost)){
+      try{ const {data}=await getJSON("https://"+r.asciiHost+"/forward.php?format=json&shorturl="+encodeURIComponent(r.u.pathname.slice(1)),{},8000); if(data&&data.url){dest=data.url;via="API "+r.asciiHost;} }catch(e){}
+    }
+    if(!dest){
+      try{ const {data}=await getJSON("https://api.allorigins.win/get?url="+encodeURIComponent(r.u.href),{},15000);
+        const fin=data&&data.status&&data.status.url;
+        if(fin&&!same(fin,r.u.href)){dest=fin;via="allorigins.win";}
+        else { const s=sniffRedirect(data&&data.contents,r.u.href); if(s&&!same(s,r.u.href)){dest=s;via="allorigins.win, найдено в коде страницы";} }
+      }catch(e){}
+    }
+    if(!dest){
+      try{ const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),12000);
+        const resp=await fetch("https://corsproxy.io/?url="+encodeURIComponent(r.u.href),{signal:ctl.signal,credentials:"omit"}); clearTimeout(t);
+        if(resp.ok){ const s=sniffRedirect(await resp.text(),r.u.href); if(s&&!same(s,r.u.href)){dest=s;via="corsproxy.io, найдено в коде страницы";} }
+      }catch(e){}
+    }
+    if(!alive()) return;
+    if(!dest){
+      S("expand","warn","Автоматически раскрыть не удалось. Попробуй CheckShortURL в списке сервисов ниже.","не раскрыта");
+      state.expand={done:true,dest:null};
+      paintRedirect(); return;
+    }
+    state.expand={done:true,dest,via};
+    state.unresolvedShort=false;
+    const sub=L.analyze(dest);
+    const sc=sub.error?{lvl:"caution"}:L.scoreOf(sub.F);
+    const worst=(sub.F||[]).filter(f=>["crit","high","med"].includes(f.w)&&!/Сокращатель/.test(f.t));
+    S("expand",sc.lvl==="danger"?"bad":sc.lvl==="caution"?"warn":"ok","Ведёт на <code>"+esc(dest.length>90?dest.slice(0,90)+"…":dest)+"</code>. Способ: "+esc(via)+".","раскрыта");
+    if(worst.length) NF(sc.lvl==="danger"?"high":"med","Конечный адрес подозрителен: "+esc(sub.uniRegistrable||dest.slice(0,40)),"Ссылка ведёт на <code>"+esc(dest.slice(0,100))+"</code>. Там найдено: "+worst.slice(0,3).map(f=>f.t.charAt(0).toLowerCase()+f.t.slice(1)).join("; ")+".","переадресация");
+    else if(r.shortener) NF("info","Сокращённая ссылка раскрыта","Она ведёт на <code>"+esc(dest.slice(0,100))+"</code>. Запусти полную проверку конечного адреса, чтобы узнать и его репутацию.","сокращатель");
+    paintRedirect();
+  }
+
+  /* ---------- отрисовка результата ---------- */
+  const ORDER={crit:0,high:1,med:2,low:3,info:4,good:5};
+  const WTAG={crit:"критично",high:"высокий риск",med:"средний",low:"низкий",info:"к сведению",good:"хороший знак"};
+  const allFindings=()=>state?state.r.F.concat(state.net).slice().sort((a,b)=>ORDER[a.w]-ORDER[b.w]):[];
+
+  function paintFindings(){
+    const F=allFindings();
+    const real=F.filter(f=>!["info","good"].includes(f.w));
+    const list=F.slice();
+    if(!real.length) list.push({w:"good",t:"Явных ловушек в адресе нет",d:"Схема, домен и структура выглядят обычно. Сама страница всё равно может оказаться чем угодно, поэтому смотри на живые проверки.",src:"адрес"});
+    $("findings").innerHTML=list.map(f=>'<div class="f" data-w="'+f.w+'"><span class="dot"></span><div class="t">'+f.t+"<em>"+WTAG[f.w]+", "+esc(f.src)+'</em></div><div class="d">'+f.d+"</div></div>").join("");
+    $("fsub").textContent=real.length?"Тревожных признаков: "+real.length+". Сначала самые серьёзные.":"Тревожных признаков пока нет.";
+  }
+
+  function paintVerdict(){
+    if(!state) return;
+    const sc=L.scoreOf(allFindings(),{unresolvedShort:state.unresolvedShort});
+    $("verdict").dataset.lvl=sc.lvl;
+    const T={safe:["Похоже, безопасно","Явных признаков обмана не найдено."],caution:["Будь осторожен","Есть подозрительные детали. Не вводи пароли и данные карты, пока не убедишься, что это настоящий сайт."],danger:["Высокий риск","Набор признаков как у фишинговой или вредоносной ссылки. Лучше не открывать."]};
+    $("lvl").textContent=T[sc.lvl][0];
+    $("vsub").textContent=T[sc.lvl][1]+(state.netOn&&!state.done?" Сетевые проверки ещё идут, итог может измениться.":"");
+    $("scoreN").textContent=sc.score;
+    $("needle").style.left=Math.max(2,Math.min(98,sc.score))+"%";
+    const svcs=Object.values(state.svc), total=svcs.filter(x=>x.s!=="skip").length, fin=svcs.filter(x=>!["wait","run","skip"].includes(x.s)).length;
+    $("prog").textContent=state.netOn?("Живых проверок завершено: "+fin+" из "+total+". Ещё "+MANUAL.length+" сервисов для ручной проверки ниже."):"Сетевые проверки выключены, оценка только по самому адресу.";
+    state.sc=sc;
+  }
+
+  function paintSvcRows(netOn){
+    $("svc").innerHTML=SERVICES.map(s=>'<div class="svc-row" data-svc="'+s.id+'"><div><div class="nm">'+esc(s.nm)+'</div><div class="wh">'+esc(s.wh)+'</div></div><span class="pill" data-s="'+(netOn?"wait":"skip")+'">'+(netOn?ST_TXT.wait:"выключено")+'</span><div class="res"></div></div>').join("");
+  }
+
+  function paintChars(r){
+    const blk=$("charBlock");
+    if(!r.u||r.isIP){ blk.style.display="none"; return; }
+    blk.style.display="";
+    const letters=r.chars.filter(c=>!c.dot);
+    const nonAscii=letters.filter(c=>/[^\x00-\x7f]/.test(c.ch)).length;
+    const bad=letters.filter(c=>c.lvl==="bad").length;
+    $("charSub").textContent=nonAscii?("Не латинских символов: "+nonAscii+(bad?", из них выдают себя за латинские буквы: "+bad+". Они подсвечены красным.":". Похожих на латиницу подмен не найдено.")):"Домен состоит только из обычных латинских букв, цифр и дефисов, подмены символов нет.";
+    $("twin").innerHTML=r.uniHost!==r.asciiHost?'<div><span>Как видит человек</span><code>'+esc(r.uniHost)+'</code></div><div><span>Как видит браузер (Punycode)</span><code>'+esc(r.asciiHost)+"</code></div>":"";
+    $("glyphs").innerHTML=!nonAscii?"":letters.length>80?'<p class="h2-sub">Домен слишком длинный для посимвольного показа.</p>':r.chars.map(c=>c.dot?'<div class="g dot-g" aria-hidden="true"><div class="c">.</div></div>':'<div class="g '+c.lvl+'" title="'+esc(c.code+", "+c.script+(c.lookalike?", похожа на «"+c.lookalike+"»":""))+'"><div class="c">'+esc(c.ch)+'</div><div class="u">'+c.code.replace("U+","")+'</div><div class="sc">'+(c.lookalike&&c.lvl==="bad"?"≈ "+esc(c.lookalike):esc(L.SHORT_SCRIPT[c.script]||c.script))+"</div></div>").join("");
+  }
+
+  function paintRedirect(){
+    if(!state) return;
+    const r=state.r, blk=$("redirBlock");
+    if(!r.u){blk.style.display="none";return;}
+    blk.style.display="";
+    const nested=r.nested||[], ex=state.expand;
+    if(!r.shortener&&!nested.length){
+      $("redirSub").textContent="Сокращатель не обнаружен, вложенных ссылок в параметрах нет. Адрес ведёт туда, куда написано.";
+      $("chain").innerHTML="";$("redirAct").innerHTML="";return;
+    }
+    const chain=[{url:r.u.href,lab:r.shortener?"Сокращённая ссылка":"Исходная ссылка"}];
+    if(ex&&ex.dest) chain.push({url:ex.dest,lab:r.shortener?"Настоящая цель":"Вложена в параметр «"+nested[0].key+"»"});
+    else if(!r.shortener) nested.forEach(n=>chain.push({url:n.url,lab:"Вложена в параметр «"+n.key+"»"}));
+    let txt;
+    if(!r.shortener) txt="В адресе найдена вложенная ссылка. Сайт может переадресовать тебя на неё.";
+    else if(ex&&ex.dest) txt="Настоящая цель найдена ("+ex.via+").";
+    else if(!state.netOn) txt="Включи сетевые проверки, чтобы раскрыть ссылку.";
+    else if(ex&&ex.done) txt="Раскрыть автоматически не удалось. Используй CheckShortURL в списке сервисов ниже.";
+    else txt="Раскрываю через сервисы…";
+    $("redirSub").textContent=txt;
+    $("chain").innerHTML=chain.map((c,i)=>'<div class="hop'+(i===chain.length-1&&chain.length>1?" final":"")+'"><span class="num">'+(i+1)+'</span><div class="body"><div class="lab">'+esc(c.lab)+"</div><code>"+esc(c.url)+"</code></div></div>").join("");
+    const target=(ex&&ex.dest)||(!r.shortener&&nested[0]&&nested[0].url);
+    $("redirAct").innerHTML=target?'<button class="small-btn" type="button" id="checkDest">Проверить конечный адрес полностью</button>':"";
+    if(target) $("checkDest").onclick=()=>{$("url").value=target;start();window.scrollTo({top:0,behavior:"smooth"});};
+  }
+
+  /* ---------- сервисы для ручной проверки ---------- */
+  const MANUAL=[
+    ["VirusTotal","70+ антивирусов и сканеров",(u,d)=>"https://www.virustotal.com/gui/search/"+encodeURIComponent(encodeURIComponent(u))],
+    ["urlscan.io","снимок страницы и её поведение",(u,d)=>"https://urlscan.io/search/#"+encodeURIComponent("page.domain:"+d)],
+    ["Google Transparency","статус в Google Safe Browsing",(u,d)=>"https://transparencyreport.google.com/safe-browsing/search?url="+encodeURIComponent(u)],
+    ["Kaspersky OpenTIP","репутация в базах Касперского",(u,d)=>"https://opentip.kaspersky.com/"+encodeURIComponent(d)+"/"],
+    ["Sucuri SiteCheck","вредоносный код и чёрные списки",(u,d)=>"https://sitecheck.sucuri.net/results/"+encodeURIComponent(d)],
+    ["URLVoid","30+ чёрных списков сразу",(u,d)=>"https://www.urlvoid.com/scan/"+encodeURIComponent(d)+"/"],
+    ["Norton Safe Web","оценка безопасности от Norton",(u,d)=>"https://safeweb.norton.com/report/show?url="+encodeURIComponent(d)],
+    ["Cisco Talos","репутация домена и IP",(u,d)=>"https://talosintelligence.com/reputation_center/lookup?search="+encodeURIComponent(d)],
+    ["AlienVault OTX","индикаторы угроз от сообщества",(u,d)=>"https://otx.alienvault.com/indicator/domain/"+encodeURIComponent(d)],
+    ["AbuseIPDB","жалобы на домен и сервер",(u,d)=>"https://www.abuseipdb.com/check/"+encodeURIComponent(d)],
+    ["ScamAdviser","рейтинг доверия магазинам",(u,d)=>"https://www.scamadviser.com/check-website/"+encodeURIComponent(d)],
+    ["CheckShortURL","раскрыть сокращённую ссылку",(u,d)=>"https://checkshorturl.com/expand.php?u="+encodeURIComponent(u)],
+    ["WHOIS","владелец и дата регистрации",(u,d)=>"https://who.is/whois/"+encodeURIComponent(d)],
+    ["crt.sh","выпущенные SSL-сертификаты",(u,d)=>"https://crt.sh/?q="+encodeURIComponent(d)],
+    ["Wayback Machine","как сайт выглядел раньше",(u,d)=>"https://web.archive.org/web/*/"+encodeURIComponent(d)]
+  ];
+  function paintManual(r){
+    const u=r.u?r.u.href:r.raw, d=r.registrable||r.asciiHost||"";
+    $("manual").innerHTML=MANUAL.map(([n,w,f])=>'<a class="m" href="'+esc(f(u,d))+'" target="_blank" rel="noopener noreferrer"><b>'+esc(n)+"</b><span>"+esc(w)+"</span></a>").join("");
+  }
+
+  /* ---------- запуск проверки ---------- */
+  function start(){
+    const v=$("url").value.trim(); if(!v){$("url").focus();return;}
+    const r=L.analyze(v);
+    renderLens(r);
+    const res=$("result");
+    if(r.error){ res.classList.remove("show"); toast(r.error); return; }
+    runId++;
+    const netOn=$("netOn").checked&&!!r.u;
+    state={r,net:[],svc:{},netOn,done:!netOn,unresolvedShort:!!r.shortener,expand:null};
+    SERVICES.forEach(s=>state.svc[s.id]={s:netOn?"wait":"skip",res:""});
+    paintSvcRows(netOn);
+    paintFindings(); paintVerdict(); paintManual(r);
+    if(r.u){ paintChars(r); paintRedirect(); } else { $("charBlock").style.display="none"; $("redirBlock").style.display="none"; }
+    res.classList.add("show");
+    try{ const p=new URL(location.href); p.searchParams.set("url",v); history.replaceState(null,"",p); }catch(e){}
+    if(netOn) runNetwork(r,runId);
+  }
+
+  $("form").addEventListener("submit",e=>{e.preventDefault();start();});
+  document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{$("url").value=c.dataset.ex;start();}));
+  const savedKey=store.get("linza-gsb"); if(savedKey) $("gsbKey").value=savedKey;
+  $("gsbKey").addEventListener("change",()=>store.set("linza-gsb",$("gsbKey").value.trim()));
+  if(store.get("linza-net")==="0") $("netOn").checked=false;
+  $("netOn").addEventListener("change",()=>store.set("linza-net",$("netOn").checked?"1":"0"));
+
+  function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("on"),2400); }
+  async function copy(text,msg){
+    try{ await navigator.clipboard.writeText(text); toast(msg); }
+    catch(e){ const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");toast(msg);}catch(e2){toast("Не удалось скопировать.");} ta.remove(); }
+  }
+  const plain=h=>{const d=document.createElement("div");d.innerHTML=h;return d.textContent;};
+  $("copyReport").addEventListener("click",()=>{
+    if(!state) return;
+    const r=state.r, sc=state.sc||L.scoreOf(allFindings());
+    const lines=["Линза: отчёт о проверке ссылки","Ссылка: "+r.raw,"Домен: "+(r.uniRegistrable||r.asciiHost||"нет"),"Итог: "+$("lvl").textContent+" ("+sc.score+" из 100)","","Признаки:"];
+    allFindings().forEach(f=>lines.push("- ["+WTAG[f.w]+"] "+plain(f.t)+". "+plain(f.d)));
+    lines.push("","Живые проверки:");
+    SERVICES.forEach(s=>{const x=state.svc[s.id];lines.push("- "+s.nm+": "+(ST_TXT[x.s]||x.s)+(x.res?". "+plain(x.res):""));});
+    copy(lines.join("\n"),"Отчёт скопирован");
+  });
+  $("copyLink").addEventListener("click",()=>copy(location.href,"Ссылка на проверку скопирована"));
+
+  // index.html?url=... сразу запускает проверку
+  try{ const q=new URLSearchParams(location.search).get("url"); if(q){ $("url").value=q; start(); } }catch(e){}
+})();
+</script>
+</body>
+</html>
